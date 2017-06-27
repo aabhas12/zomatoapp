@@ -26,7 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private ListView lv;
 
     // URL to get contacts JSON
-    private static String url = "http://c383d9aa.ngrok.io/getcity/delhi";
+    private static String url = "http://c383d9aa.ngrok.io/getcity/ahmedabad";
+    private static String url1 = "http://c383d9aa.ngrok.io/searchbyrest/";
 
     ArrayList<HashMap<String, String>> contactList;
 
@@ -60,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... arg0) {
             HttpHandler sh = new HttpHandler();
-
+            HttpHandler sh1 = new HttpHandler();
             // Making a request to url and getting response
             String jsonStr = sh.makeServiceCall(url);
 
@@ -74,26 +75,59 @@ public class MainActivity extends AppCompatActivity {
                     JSONArray contacts = jsonObj.getJSONArray("location_suggestions");
 
                     // looping through All Contacts
-                    for (int i = 0; i < contacts.length(); i++) {
-                        JSONObject c = contacts.getJSONObject(i);
-                        System.out.print(c);
-                        String id = c.getString("id");
-                        String name = c.getString("name");
-                        String email = c.getString("country_id");
+                    JSONObject c = contacts.getJSONObject(0);
+                    System.out.print(c);
+                    String id = c.getString("id");
+                    String jsonStr1 = sh1.makeServiceCall(url1 + id);
+                    System.out.println("I am "+jsonStr1);
+                    if (jsonStr1 != null) {
+                        System.out.println("I am here");
+                        try {
+                            JSONObject jsonObj1 = new JSONObject(jsonStr1);
 
-                        // tmp hash map for single contact
-                        HashMap<String, String> contact = new HashMap<>();
+                            // Getting JSON Array node
+                            JSONArray rest = jsonObj1.getJSONArray("restaurants");
+                            System.out.println(rest);
+                            for (int i = 0; i < rest.length(); i++) {
+                                JSONObject r = rest.getJSONObject(i);
 
-                        // adding each child node to HashMap key => value
-                        contact.put("id", id);
-                        contact.put("name", name);
-                        contact.put("email", email);
+                                JSONObject r1 = r.getJSONObject("restaurant");
+
+                                String khana = r1.getString("cuisines");
+                                String cost_for_two = r1.getString("average_cost_for_two");
+
+                                // tmp hash map for single contact
+                                HashMap<String, String> contact = new HashMap<>();
+
+                                // adding each child node to HashMap key => value
+                                //contact.put("id", r1);
+                                contact.put("name", khana);
+                                contact.put("email", cost_for_two);
 
 
-                        // adding contact to contact list
-                        contactList.add(contact);
-                    }
-                } catch (final JSONException e) {
+                                // adding contact to contact list
+                                contactList.add(contact);
+                            }
+                        }
+                            catch (final JSONException e) {
+                                Log.e(TAG, "Json parsing error: " + e.getMessage());
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(),
+                                                "Json parsing error: " + e.getMessage(),
+                                                Toast.LENGTH_LONG)
+                                                .show();
+                                    }
+                                });
+
+                            }
+                        }
+
+
+
+                }
+                catch (final JSONException e) {
                     Log.e(TAG, "Json parsing error: " + e.getMessage());
                     runOnUiThread(new Runnable() {
                         @Override
